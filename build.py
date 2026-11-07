@@ -371,7 +371,11 @@ def resolve(meta, base_id, channel, logo_index, name_to_stem, epg_ids, args):
 def main():
     ap = argparse.ArgumentParser(description="生成带中文频道名/台标/EPG 的 M3U 订阅")
     ap.add_argument("-o", "--output", default=str(ROOT / "docs" / "playlist.m3u"))
-    ap.add_argument("--all-streams", action="store_true", help="保留同一频道的全部流（默认仅保留画质最高的一条）")
+    # 默认保留同一频道的全部流；如想恢复“只留画质最高的一条”，加 --best-only
+    ap.add_argument("--all-streams", dest="all_streams", action="store_true",
+                    default=True, help="保留同一频道的全部流（默认已开启）")
+    ap.add_argument("--best-only", dest="all_streams", action="store_false",
+                    help="只保留同一频道画质最高的一条流（恢复旧行为）")
     ap.add_argument("--probe-logos", action="store_true", help="对未命中的台标逐个 HEAD 探测（较慢）")
     ap.add_argument("--check-streams", action="store_true", help="构建时逐条探活，优先选可用流（较慢，CI 用）")
     ap.add_argument("--no-epg", action="store_true", help="不写入 x-tvg-url")
@@ -427,7 +431,7 @@ def main():
         if logo_url:
             logo_ok += 1
 
-        # 选流
+        # 选流：默认全留，按可用性+画质排序
         if args.all_streams:
             chosen = sorted(items, key=sort_key, reverse=True)
         else:
